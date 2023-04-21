@@ -60,7 +60,7 @@ for sess in os.listdir(gram_data_dir):
         row = np.array(x)
         data_1.append(row)
     data['id'] = sess[:-4]
-    data_1_1 = np.array(data_1)
+    data_1_1 = np.array(data_1[:39])
     data['gram_data'] = data_1_1.T
     num = num + 1
     traindata.append(data)

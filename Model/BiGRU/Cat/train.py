@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser(description="RNN_Model")
 parser.add_argument('--cuda', action='store_false')
 parser.add_argument('--bid_flag', action='store_false')
 parser.add_argument('--batch_first', action='store_false')
-parser.add_argument('--batch_size', type=int, default=64, metavar='N')
+parser.add_argument('--batch_size', type=int, default=32, metavar='N')
 parser.add_argument('--log_interval', type=int, default=10, metavar='N')
 parser.add_argument('--dropout', type=float, default=0.5)
 parser.add_argument('--epochs', type=int, default=30)
@@ -38,7 +38,7 @@ parser.add_argument('--seed', type=int, default=1111)
 parser.add_argument('--dia_layers', type=int, default=2)
 parser.add_argument('--hidden_layer', type=int, default=256)
 parser.add_argument('--out_class', type=int, default=4)
-parser.add_argument('--utt_insize', type=int, default=80)
+parser.add_argument('--utt_insize', type=int, default=39)
 args = parser.parse_args()
 
 torch.manual_seed(args.seed)
@@ -70,7 +70,7 @@ def Train(epoch):
             train_loss = 0
 
 
-def Test(test_len):
+def Test():
     utt_net.eval()
     label_pre = []
     label_true = []
@@ -85,13 +85,13 @@ def Test(test_len):
             output = torch.argmax(utt_out, dim=1)
             label_true.extend(target.cpu().data.numpy())
             label_pre.extend(output.cpu().data.numpy())
-        accuracy_recall = recall_score(label_true[:test_len], label_pre[:test_len], average='macro')
-        accuracy_f1 = metrics.f1_score(label_true[:test_len], label_pre[:test_len], average='macro')
-        CM_test = confusion_matrix(label_true[:test_len], label_pre[:test_len])
+        accuracy_recall = recall_score(label_true, label_pre, average='macro')
+        accuracy_f1 = metrics.f1_score(label_true, label_pre, average='macro')
+        CM_test = confusion_matrix(label_true, label_pre)
         print(accuracy_recall)
         print(accuracy_f1)
         print(CM_test)
-    return accuracy_f1, accuracy_recall, label_pre[:test_len], label_true[:test_len]
+    return accuracy_f1, accuracy_recall, label_pre, label_true
 
 
 Final_result = []
@@ -100,7 +100,7 @@ result_label = []
 kf = KFold(n_splits=10)
 for index, (train, test) in enumerate(kf.split(data)):
     print(index)
-    train_loader, test_loader, input_test_data_id, input_test_label_org, test_len = Get_data(data, train, test, args)
+    train_loader, test_loader, input_test_data_id, input_test_label_org = Get_data(data, train, test, args)
     utt_net = Utterance_net(args.utt_insize, args.hidden_layer, args.out_class, args)
     if args.cuda:
         utt_net = utt_net.cuda()
@@ -113,7 +113,7 @@ for index, (train, test) in enumerate(kf.split(data)):
     predict = copy.deepcopy(input_test_label_org)
     for epoch in range(1, args.epochs + 1):
         Train(epoch)
-        accuracy_f1, accuracy_recall, pre_label, true_label = Test(test_len)
+        accuracy_f1, accuracy_recall, pre_label, true_label = Test()
         if epoch % 15 == 0:
             lr /= 10
             for param_group in utt_optimizer.param_groups:
@@ -134,7 +134,7 @@ for index, (train, test) in enumerate(kf.split(data)):
     for i in range(len(input_test_data_id)):
         a = {}
         a['id'] = input_test_data_id[i]
-        a['Predict_label'] = predict[i]
+        a['Predict_label'] = result_label[i]
         a['True_label'] = input_test_label_org[i]
         onegroup_result.append(a)
     Final_result.append(onegroup_result)

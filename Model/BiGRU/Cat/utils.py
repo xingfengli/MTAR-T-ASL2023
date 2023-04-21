@@ -84,12 +84,7 @@ def Get_data(data,train,test,args):
         train_data.extend(data[train[i]])
     for i in range(len(test)):
         test_data.extend(data[test[i]])
-    org_len = len(test_data)
-    if(len(test_data) % args.batch_size != 0):
-        w = args.batch_size - len(test_data) % args.batch_size
-        while(i < w):
-            test_data.append(test_data[0])
-            i = i + 1
+
 
     input_train_data_spec,input_train_data_spec_CNN,input_train_label,_,_ = Feature(train_data,args)
     input_test_data_spec,input_test_data_spec_CNN, input_test_label,input_test_data_id,input_test_label_org = Feature(test_data,args)
@@ -102,4 +97,4 @@ def Get_data(data,train,test,args):
     test_dataset = subDataset(input_test_data_spec_CNN,label_test)
     train_loader = torch.utils.data.DataLoader(train_dataset,batch_size=args.batch_size,drop_last=True,shuffle=True)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=args.batch_size,drop_last=False, shuffle=False)
-    return train_loader,test_loader,input_test_data_id[:org_len],input_test_label_org[:org_len],org_len
+    return train_loader,test_loader,input_test_data_id,input_test_label_org
